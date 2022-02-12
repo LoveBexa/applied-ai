@@ -1,10 +1,10 @@
 from random import random
 import numpy as np
-
+import random
 
 ####### Configurations 
 
-iterations = 5
+iterations = 100
 iteration_index = 0
 
 # travelling salesman cost 
@@ -68,6 +68,7 @@ random_route = np.random.choice(np.arange(1, 51), replace=False, size=(1, 50))[0
 print("Start route: ", random_route)
 
 ####### Step 2 : Neighbourhood operator: swap two adjacent cities
+
 def newRoute(route):
     global iteration_index
     # create a new route by checking nth iteration & swapping n+1 item with n+2 
@@ -75,7 +76,17 @@ def newRoute(route):
     iteration_index += 1
     return route 
 
-
+def randomSwap(route):
+    new_route = route.copy()
+    city1 = random.randint(0, 24)
+    city2 = random.randint(0, 24)
+    # They must not be the same city as you can't swap these
+    if city1 != city2:
+        new_route[city1], new_route[city2] = new_route[city2], new_route[city1]
+    else: # If they are the same then go to another city
+        city1 -= 1
+        new_route[city1], new_route[city2] = new_route[city2], new_route[city1]
+    return new_route
 
 ####### Step 3 : Solution evaluation: Calculate the cost of travelling through the cities (based on 2D matrix)
 def calculateCost(route):
@@ -96,7 +107,7 @@ def calculateCost(route):
 ####### Step 4 : Stopping criteria: No. improvement is 25 iterations (5 for now)
 def hillClimb(route):
     route_cost = calculateCost(route)
-    new_route = newRoute(route)
+    new_route = randomSwap(route)
     new_route_cost = calculateCost(new_route)
     if new_route_cost < route_cost:
         return new_route

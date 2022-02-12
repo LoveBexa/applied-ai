@@ -4,6 +4,7 @@ import random
 
 ########### Convert CSV to DataFrame ########### 
 
+
 # Show full width and height of dataframe
 pd.set_option('display.max_colwidth', None)
 pd.set_option('display.max_rows', None)
@@ -15,6 +16,10 @@ data = pd.read_csv("knapsack.csv")
 data_true = data
 data_true["true value"] = data_true["values"] / data_true["weights"]
 
+# Inde start from 1 rather than 0 i.e Item 1 to 100
+data_true.index += 1 
+
+
 ########### Knapsack Bag Initialisations ########### 
 
 bag_weight = 0
@@ -22,44 +27,6 @@ bag_value = 0
 bag_contents = []
 bag_leftovers = []
 bag_capacity = 1500 
- 
-########### Step 1: Initial Solution: Greedy start from higher true value ########### 
-
-
-# Sort items in descending order based on true value to help with greedy start
-data_true = data_true.sort_values('true value',ascending=False)
-# Add 1 to index so item numbers start from 1 not 0
-data_true.index += 1
-# print(data_true)
-
-# Iterate 1st time through each item in the dataframe from largest true value down to smallest
-for index, row in data_true.iterrows():
-    # print (index, row["weights"], row["values"], row["true value"])
-# If current weight of bag + weight of new item is less than 1200kg
-    if bag_weight + row["weights"] <= bag_capacity:
-        # Add to bag
-        bag_contents.append(index)
-        # Then increase current bag weight & value
-        bag_weight += row["weights"]
-        bag_value += row["values"]
-    else:
-        # Skipped items goes into the bag_leftovers (to iterate over the next time)
-        bag_leftovers.append(index)
-
-# Iterate 2nd time through the bag_leftovers again to see if anything can be added 
-for item in bag_leftovers:
-    # Iterate through dataframe of bag items
-    for index, row in data_true.iterrows():
-        # If the item in leftover bag is the same as dataframe item (to find the weight and value)
-        # And if the weight of that item + current weight is less than maximum capacity
-        if (item == index) & (bag_weight + row["weights"] <= bag_capacity):
-            # Find the weight of item and add it to bag
-            bag_weight += row["weights"]
-            bag_value += row["values"] 
-            # Add item to the bag_contents 
-            bag_contents.append(index)
-            # Remove from bag_leftovers
-            bag_leftovers.remove(item)
 
 
 
@@ -98,11 +65,48 @@ def calculateTrueValue(item):
             if (item == index):
                 return row["true value"]
     
+ 
+########### Step 1: Initial Solution: Random start ########### 
+
+
+# List items 1 to 100
+items = random.sample(range(1, 101), 100)
+bag_leftovers = items.copy()
+    
+# While bag weight is less than bag capacity 
+tried_items = []
+
+
+while bag_weight < bag_capacity:
+    
+    # Grab a random item from the leftover bag
+    random_item = random.choice(bag_leftovers)
+    random_item_weight = calculateWeight(random_item)
+    # If the random item grabbed from leftover bag and the current bag weight is less than max. capcity
+    # Also if the new random item ISNT in already tried items
+    if ((random_item_weight + bag_weight) <= bag_capacity) & (random_item not in tried_items):
+        # Add it!
+        bag_contents.append(random_item)
+        # Remove it from the leftover bag
+        bag_leftovers.remove(random_item)
+        # Update the bag weight
+        bag_weight += random_item_weight
+        tried_items.append(random_item)
+    # If the new random item isn't in tried items BUT is over max capcity
+    elif(random_item not in tried_items):
+        # Add to tried items
+        tried_items.append(random_item)
+        continue
+    else:
+        # If items are already in tried_items then escape the loop
+        break
+
+
 ########### Testing stuff out ###########
 
-calculateWeight(bag_leftovers) 
 print("Start solution: ", bag_contents)        
-print("Items leftover: ", bag_leftovers)     
+print("Items leftover: ", bag_leftovers)  
+bag_value = calculateTotalValue(bag_contents)
 print("Start weight: ", bag_weight, "Start value: ", bag_value)
 
     
@@ -149,9 +153,6 @@ def swap(contents, leftovers):
             return items_swapped
         
         
-    
-    # Calculate new bag
-
 
 ########### Step 3: Show all neighbourhood solutions ########### 
 
@@ -183,12 +184,13 @@ def steepestAscent(contents, leftovers, iterations):
 
 ########### Step 4: Pick the best solution ########### 
 
-solutions = steepestAscent(bag_contents, bag_leftovers, 31)
+solutions = steepestAscent(bag_contents, bag_leftovers, 10)
+
+
+print(solutions)
+# Remove solution from dataframe 
+# best_solution = solutions[["Value", "Solution"]].sort_values(by='Value', ascending=False)
+best_solution = solutions[["Value", "Solution"]]
 
 # Export to CSV
 solutions.to_csv(r'knapsack-steepest-ascent.csv')
-
-
-# Remove solution from dataframe 
-best_solution = solutions[["Value", "Solution"]].sort_values(by='Value', ascending=False)
-print(best_solution)

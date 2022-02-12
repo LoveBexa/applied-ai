@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import math
+import math, random
 
 # Show full width of dataframe
 pd.set_option('display.max_colwidth', None)
@@ -96,71 +96,82 @@ for city in greedy_start:
 print("Cost = ",greedy_cost)
 
 
-# Swap counter
-i_index = 0
+# Random swap!
 
 def swap(route):
-    global index_iterations, i_index
-    # create a new route by checking nth iteration & swapping n+1 item with n+2 
-    route[index_iterations], route[index_iterations+1] = route[index_iterations+1], route[index_iterations]
-    i_index += 2
-    return route 
+    new_route = route.copy()
+    city1 = random.randint(0, 23)
+    city2 = random.randint(0, 23)
+    # They must not be the same city as you can't swap these
+    if city1 != city2:
+        new_route[city1], new_route[city2] = new_route[city2], new_route[city1]
+    else: # If they are the same then go to another city
+        city1 -= 1
+        new_route[city1], new_route[city2] = new_route[city2], new_route[city1]
+    return new_route
 
 
 ########### Add the cost of travelling through the cities ########### 
 
-def calculateRoute(cities):
+def calculateRoute(route):
     cost_total = 0
-        # For each city 
-    for city in cities:
+        # For each city     
+    for key, city in enumerate(route):
         # Find the index
-        city_index = cities.index(city)
-        if cities.index(city) < 23:
+        if route.index(city) < 23:
             # Then count up the cost from A -> B, B -> C etc
-            cost_total = cost_total + calculatePath(greedy_start[city_index], greedy_start[city_index+1])
+            this_city = route[key]
+            next_city = route[key+1]
+            cost_total = cost_total + calculatePath(this_city, next_city)
         else:
             # Then make sure we add on the cost of the last city back to the first
-            cost_total = cost_total + calculatePath(greedy_start[23], greedy_start[0])
-    # print(cost_total)
-    return cost_total
+            cost_total = cost_total + calculatePath(route[23], route[0])
+
+    return round(cost_total, 2)
 
 
 
 ########### Stopping criteria: No improvement in consecutive 100 iterations or how ever many ########### 
 
 # There are 24 neihbouring cities therefor there are 24-1 neighbouring solutions
-swaps = 23
+swaps = 40
+count = 0
 
 columns = list(range(1, 25))
 solutions = {}
+
+best_route = greedy_start
+
+while swaps > count:
+    # Cost of current best route
+    best_route_cost = calculateRoute(best_route)
+    # Create new route!!
+    new_route = swap(best_route)
+    # Calculate cost of new route!!
+    new_cost = calculateRoute(new_route)
+    # If new route is better than best route then make into best route
+    if new_cost < best_route_cost:
+        best_route = new_route   
+    else:
+        best_route = best_route
         
-while swaps > 0:
-    # Do not surpass 23 iterations for full neighbourhood operator 
-
-    index_iterations = i_index % 23
-    # Swap adjacent items to create a new path
-    current_path = swap(current_path)
-    # Calculate cost of current path round to 2 decimal points
-    path_cost = round(calculateRoute(current_path), 2)
-    # Append cost, path to dictionary
-    solutions[path_cost] = str(current_path)
-    # Count down from total times needed to iterate
-    swaps -= 1
+    solutions[calculateRoute(best_route)] = best_route
+    count += 1
     
-
 # Convert dictionary to a pandas Data Frame 
 solutions_items = solutions.items()
 solution_list = list(solutions_items)
 solutions_df = pd.DataFrame(solution_list, columns= ["Cost","Solution"])
 solutions_df.index += 1
 
-# print(solutions_df)
-
-# Sort by lowest cost
-best_solution = solutions_df.sort_values(by=['Cost'])
-#print(best_solution.head(24))
 print(solutions_df)
-# Print the best solution!!!!!!! 
+
+# # Sort by lowest cost
+# best_solution = solutions_df.sort_values(by=['Cost'])
+# #print(best_solution.head(24))
+# print(solutions_df)
+# # Print the best solution!!!!!!! 
+solutions_df['Cost'] = pd.to_numeric(solutions_df['Cost'])
 
 print("\nThe best solution out of the neighbourhood is solution number", solutions_df['Cost'].idxmin())
 print(solutions_df.min())

@@ -1,11 +1,13 @@
-import random
 from copy import deepcopy
+import random, timeit
+
+# Calculate run time of the program
+start = timeit.default_timer()
 
 # We want to use GA to find a solution to the Knapsack problem
-
 ############## Knapsack initialisation ##############
-items = ["A", "B", "C", "D", "E", "F"]
-weight = [3, 9, 5, 6, 1, 3]
+items = ["A", "B", "C", "D"]
+weight = [3, 9, 5, 6]
 max_weight = 18
 
 ############## Calculate total weight of genome ##############
@@ -55,33 +57,34 @@ def generatePopulation(size):
 
 # Returns fitness value for each genome
 # If weight is large than max_weight then return fitness value 0
-# If weight is same or under max_weight then return fitness value of 1
+# If weight is same or under max_weight then return weight as the fitness value
 
 def checkFitness(weight):
-    return 1 if weight <= max_weight else 0
+    return weight if weight <= max_weight else 0
 
 
 ############## Selection Function ##############
+# We want to pick 2 genomes randomly to battle out
+# Find the winner
+# Then do this again
+# Then these two winners are selected! 
 
 def selectionTourney(population):
-    # Convert dict to a list
-    new_population = list(population.items())
-    
-    # While new_population has more than 2 genomes we'll keep looping through; we want to return the top 2
-    while len(new_population) > 2:
-        # Randomly select 2 genomes
-        genome_one = random.choice(new_population)
-        genome_two = random.choice(new_population)
-        # If genome one is bigger than genome two
-        if calculateWeight(genome_one[1]) > calculateWeight(genome_two[1]):
-            # Then genome one wins & we remove genome two!
-            new_population.remove(genome_two)
+    new_parents = {}
+    counter = 0
+    while counter < 2:
+        # Pick genome 1 at random
+        genome_one = random.randint(0, len(population)-1)
+        # Pick genome 2 at random
+        genome_two = random.randint(0, len(population)-1)
+        # Best weight gets added to the winners pot!
+        if calculateWeight(list(population.items())[genome_one]) > calculateWeight(list(population.items())[genome_two]):
+            winners[counter] = population[genome_one]
         else: 
-            # Then genome two wins & we remove genome one!
-            new_population.remove(genome_one)
-    # The two leftover are the fittest and will become parents
-    return new_population
-    
+            winners[counter] = population[genome_two]
+        counter += 1
+    # Returns 2 winners as a dict
+    return new_parents
 
 ############## Crossover Function ##############
 
@@ -123,6 +126,7 @@ def crossover(parents):
 # If a problem uses 10 bits, then a good default mutation rate would be (1/10) = 0.10 or a probability of 10 percent.
 
 def mutation(children):
+    mutation_rate = 0.001
     for i in children:
         for j in i:
             print(j)
@@ -131,16 +135,23 @@ def mutation(children):
 
 
 population = generatePopulation(10)
-# Checking through each weight 
-for key, value in population.items():
-    print(key, "weight =", calculateWeight(value))
-    if checkFitness(calculateWeight(value)) == 0:
-        print("NO")
-    else:
-        print("YES")
+
+############## Checking through each weight ##############
+# for key, value in population.items():
+#     print(key, "weight =", calculateWeight(value))
+#     if checkFitness(calculateWeight(value)) == 0:
+#         print("NO")
+#     else:
+#         print("YES")
 
 parents = selectionTourney(population)
-print(parents)
-children = crossover(parents)
-print(children)
-new_population = mutation(children)
+#print(parents)
+#children = crossover(parents)
+#print(children)
+#new_population = mutation(children)
+
+
+############## Compute run time of the program ##############
+
+stop = timeit.default_timer()
+print('Run time: ', stop - start)  

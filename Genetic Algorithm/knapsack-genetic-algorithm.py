@@ -4,8 +4,8 @@ from copy import deepcopy
 # We want to use GA to find a solution to the Knapsack problem
 
 ############## Knapsack initialisation ##############
-items = ["A", "B", "C", "D"]
-weight = [3, 9, 5, 6]
+items = ["A", "B", "C", "D", "E", "F"]
+weight = [3, 9, 5, 6, 1, 3]
 max_weight = 18
 
 ############## Calculate total weight of genome ##############
@@ -52,19 +52,14 @@ def generatePopulation(size):
     
 
 ############### Fitness Function ##############
-# Must be less than total bag weight 18
+
+# Returns fitness value for each genome
+# If weight is large than max_weight then return fitness value 0
+# If weight is same or under max_weight then return fitness value of 1
 
 def checkFitness(weight):
-    # If weight is large than max_weight then we will discard
-    if weight > max_weight:
-        # OVERWEIGHT#
-        return 0
-    elif weight == max_weight:
-        # PERFECT
-        return 1
-    else:
-        # UNDERWEIGHT
-        return 2
+    return 1 if weight <= max_weight else 0
+
 
 ############## Selection Function ##############
 
@@ -87,44 +82,65 @@ def selectionTourney(population):
     # The two leftover are the fittest and will become parents
     return new_population
     
-    
+
 ############## Crossover Function ##############
 
 # Note: to access first item in a list[0][0] to access second item in first item[0][1]
+# We want to find a random point in the genome
+# Cut in half at same point for both parents
+# Swap 2nd half
+# Produce new child! 
 
 def crossover(parents):
     # Split parents out
-    parent_one = parents[0][0]
-    parent_two = parents[1]
+    parent_one = parents[0][1]
+    parent_two = parents[1][1]
+    
     # Randomly selects an int between 2n and the length of genome 
     # I've selected items-1 as counting starts from 0 and we want total length of items in bag
-    pointer = random.randint(1,len(items)-1)
-    # Takes first half of genome 1 
-    
+    pointer = random.randint(2,len(items)-1)
+    # Takes second half of genome 1 
+    p1_tmp = parent_one[pointer:]
     # Takes second half of genome 2
-    # Makes a new genome
-    # Takes second half of genome 1
+    p2_tmp = parent_two[pointer:]
+    # Takes first half of genome 1
+    p1_tmp2 = parent_one[:pointer]
     # Takes first half of genome 2
+    p2_tmp2 = parent_two[:pointer]
     # Makes a new genome
+    p1_tmp2.extend(p2_tmp)
+    p2_tmp2.extend(p1_tmp)
+    # Append 2 new genomes to results
+    result = []
+    result.append(p1_tmp2)
+    result.append(p2_tmp2)
     # Returns 2 child genomes as a new solution! 
-    
-    
-    return(pointer, parent_one,parent_two)
+    return result
 
+############## Mutation Function ##############
+
+# We want to 'mutate' aka flip a bit 
+# If a problem uses 10 bits, then a good default mutation rate would be (1/10) = 0.10 or a probability of 10 percent.
+
+def mutation(children):
+    for i in children:
+        for j in i:
+            print(j)
 
 ############## Testing Station ##############
 
 
 population = generatePopulation(10)
-print(population)
+# Checking through each weight 
 for key, value in population.items():
     print(key, "weight =", calculateWeight(value))
     if checkFitness(calculateWeight(value)) == 0:
-        print("OVERWEIGHT")
-    elif checkFitness(calculateWeight(value)) == 1:
-        print("PERFECT!")
+        print("NO")
     else:
-        print("UNDERWEIGHT")
+        print("YES")
 
 parents = selectionTourney(population)
-print("parents =", crossover(parents))
+print(parents)
+children = crossover(parents)
+print(children)
+new_population = mutation(children)
